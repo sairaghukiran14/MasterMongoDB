@@ -19,6 +19,7 @@ const totalCount = flatChallenges.length;
 let current = 0;          // index into flatChallenges
 let hintsShown = 0;
 let solutionShown = false;
+let conceptOpen = true;   // the "Concepts" lesson card starts open on a topic's first challenge
 
 // ---------------------------------------------------------------- helpers
 const el = (tag, props = {}, ...kids) => {
@@ -227,6 +228,7 @@ function renderMain() {
         el("span", { id: "solvePill", class: isDone ? "pill solved" : `pill d${ch.difficulty}` },
           isDone ? "✓ SOLVED" : diffLabel(ch.difficulty))
       ),
+      conceptCard(ch.topic),
       el("div", { class: "prompt" }, ch.prompt),
       el("div", { class: "section-label" }, "Your query"),
       el("div", { class: "editor-wrap" },
@@ -255,6 +257,46 @@ function renderMain() {
   editor.focus();
 }
 
+function conceptCard(topic) {
+  const c = topic.concept;
+  if (!c) return null;
+
+  const body = el("div", { class: "concept-body" },
+    el("p", { class: "concept-summary" }, c.summary),
+    el("div", { class: "concept-cols" },
+      el("div", {},
+        el("div", { class: "concept-h" }, "Key concepts"),
+        el("ul", { class: "concept-points" }, c.points.map((p) => el("li", {}, p)))
+      ),
+      el("div", {},
+        el("div", { class: "concept-h" }, "Syntax cheat-sheet"),
+        el("div", { class: "concept-syntax" }, c.syntax.map((s) =>
+          el("div", { class: "syn-row" },
+            el("code", {}, s.code),
+            s.note ? el("span", { class: "syn-note" }, s.note) : null
+          )
+        ))
+      )
+    ),
+    el("div", { class: "concept-tip" }, el("strong", {}, "Pro tip: "), c.tip)
+  );
+
+  const card = el("div", { class: `concept${conceptOpen ? " open" : ""}` });
+  const head = el("div", { class: "concept-head", onclick: () => {
+    conceptOpen = !conceptOpen;
+    card.classList.toggle("open", conceptOpen);
+    caret.textContent = conceptOpen ? "▾" : "▸";
+  } },
+    el("span", { class: "concept-icon" }, "📖"),
+    el("span", { class: "concept-title" }, "Concepts to learn"),
+    el("span", { class: "concept-sub" }, "— read before you drill this topic")
+  );
+  const caret = el("span", { class: "concept-caret" }, conceptOpen ? "▾" : "▸");
+  head.append(caret);
+  card.append(head, body);
+  return card;
+}
+
 function resultBox(title, value, single) {
   return el("div", { class: `result-cols ${single ? "single" : ""}` },
     el("div", { class: "result-box" },
@@ -276,6 +318,7 @@ function go(i) {
   if (i < 0 || i >= totalCount) return;
   current = i;
   hintsShown = 0; solutionShown = false;
+  conceptOpen = flatChallenges[i].ci === 0; // auto-open the lesson on each topic's first challenge
   renderSidebar();
   renderMain();
   main.scrollTop = 0;

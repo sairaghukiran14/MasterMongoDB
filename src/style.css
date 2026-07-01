@@ -109,6 +109,36 @@ body {
 }
 .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 18px 0 8px; }
 
+/* ---- Concepts lesson card ---- */
+.concept {
+  margin: 16px 0; border: 1px solid var(--border); border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(0,237,100,.05), rgba(0,237,100,0)); overflow: hidden;
+}
+.concept-head {
+  display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none;
+}
+.concept-head:hover { background: rgba(255,255,255,.02); }
+.concept-icon { font-size: 16px; }
+.concept-title { font-weight: 700; color: var(--green); }
+.concept-sub { color: var(--muted); font-size: 13px; }
+.concept-caret { margin-left: auto; color: var(--muted); }
+.concept-body { display: none; padding: 4px 18px 18px; }
+.concept.open .concept-body { display: block; }
+.concept-summary { margin: 4px 0 16px; font-size: 15px; }
+.concept-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.concept-h { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+.concept-points { margin: 0; padding-left: 18px; }
+.concept-points li { margin-bottom: 7px; font-size: 14px; line-height: 1.5; }
+.concept-syntax { display: flex; flex-direction: column; gap: 8px; }
+.syn-row { display: flex; flex-direction: column; gap: 2px; background: #0a0e14; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.syn-row code { font-family: var(--mono); font-size: 12.5px; color: var(--green); white-space: pre-wrap; word-break: break-word; }
+.syn-note { font-size: 11px; color: var(--muted); }
+.concept-tip {
+  margin-top: 16px; padding: 10px 14px; border-radius: 8px; font-size: 14px;
+  background: rgba(240,180,41,.08); border: 1px solid #6b5410;
+}
+.concept-tip strong { color: var(--amber); }
+
 .editor-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #0a0e14; }
 .editor-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--panel-2); border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .editor-bar .dotrow { display: flex; gap: 6px; }
@@ -207,6 +237,8 @@ pre.json { margin: 0; padding: 12px 14px; font-family: var(--mono); font-size: 1
   .main { padding: 18px 14px 60px; }
   .challenge-title { font-size: 20px; }
   .result-cols { grid-template-columns: 1fr; }
+  .concept-cols { grid-template-columns: 1fr; gap: 16px; }
+  .concept-sub { display: none; }
   .toolbar .btn { flex: 1 1 auto; }
   .toolbar .kbd { display: none; }
   .toolbar .grow { display: none; }

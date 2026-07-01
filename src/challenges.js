@@ -11,6 +11,23 @@ export const topics = [
     id: "find-basics",
     name: "1 · Find & Read Basics",
     blurb: "The bread and butter: reading documents with find() and findOne().",
+    concept: {
+      summary: "Reading documents is the foundation of MongoDB. A filter document decides WHICH documents come back; find() returns a cursor over many matches, findOne() returns a single document (or null).",
+      points: [
+        "A filter is itself a document: { field: value } keeps docs where field equals value. An empty filter {} matches everything.",
+        "Queries are case- and type-sensitive: \"2016\" (string) does not equal 2016 (number).",
+        "Querying an array field with a scalar matches if ANY element equals it — no special operator needed.",
+        "find() yields a cursor (many docs you can chain .sort/.limit onto); findOne() yields one document or null.",
+        "countDocuments(filter) returns a count without transferring the matched documents."
+      ],
+      syntax: [
+        { code: "db.movies.find({})", note: "every document" },
+        { code: "db.movies.find({ year: 2016 })", note: "equality filter" },
+        { code: "db.movies.findOne({ _id: 5 })", note: "one document by id" },
+        { code: "db.movies.countDocuments({ type: \"movie\" })", note: "count matches" }
+      ],
+      tip: "Think of every read as two questions: 'which documents?' (the filter) and later 'which fields?' (the projection)."
+    },
     challenges: [
       { id: "fb1", title: "Return everything", difficulty: 1,
         prompt: "Return every document in the movies collection.",
@@ -79,6 +96,24 @@ export const topics = [
     id: "operators",
     name: "2 · Query Operators",
     blurb: "Comparison ($gt, $lt, $in…) and logical ($or, $and) operators.",
+    concept: {
+      summary: "Operators let a filter express far more than equality — ranges, sets, negation, and boolean logic — by nesting an operator object under a field.",
+      points: [
+        "Comparison operators live in a sub-object: { field: { $gt: value } }.",
+        "$gt / $gte / $lt / $lte build ranges; $ne is not-equal; $in / $nin match against a list.",
+        "Multiple operators on ONE field are ANDed: { rating: { $gte: 8, $lte: 9 } } is an inclusive range.",
+        "Multiple fields in one filter form an implicit AND.",
+        "$or / $and / $nor take an ARRAY of full filter documents; use $or for alternatives.",
+        "Dot notation (\"awards.wins\") reaches into embedded documents — quote the path."
+      ],
+      syntax: [
+        { code: "{ rating: { $gt: 8.7 } }", note: "greater than" },
+        { code: "{ year: { $in: [1994, 1999] } }", note: "one of a set" },
+        { code: "{ $or: [ { rating: { $gt: 9 } }, { runtime: { $gt: 160 } } ] }", note: "either condition" },
+        { code: "{ \"awards.wins\": { $gte: 100 } }", note: "nested field" }
+      ],
+      tip: "Prefer $in over a long chain of $or equalities — it is shorter and more index-friendly."
+    },
     challenges: [
       { id: "op1", title: "Greater than", difficulty: 1,
         prompt: "Find movies with a rating greater than 8.7.",
@@ -147,6 +182,22 @@ export const topics = [
     id: "projection",
     name: "3 · Projection",
     blurb: "Shape the output: include or exclude fields with the second argument.",
+    concept: {
+      summary: "A projection is the second argument to find(). It chooses which fields are returned, keeping payloads small and focused.",
+      points: [
+        "1 = include, 0 = exclude. You generally cannot mix 1s and 0s in one projection…",
+        "…except _id, which you may set to 0 while otherwise using an inclusion projection.",
+        "Inclusion projection returns ONLY the listed fields (plus _id unless excluded).",
+        "Exclusion projection returns EVERYTHING except the listed fields.",
+        "Dot notation projects a nested sub-field: { \"awards.wins\": 1 }."
+      ],
+      syntax: [
+        { code: "db.movies.find({}, { title: 1, year: 1, _id: 0 })", note: "include, drop _id" },
+        { code: "db.movies.find({}, { cast: 0, awards: 0 })", note: "exclude fields" },
+        { code: "db.movies.find({}, { title: 1, \"awards.wins\": 1, _id: 0 })", note: "nested" }
+      ],
+      tip: "Return only what the caller needs — smaller documents mean less network/memory and can enable covered queries served entirely from an index."
+    },
     challenges: [
       { id: "pr1", title: "Just the title", difficulty: 1,
         prompt: "Return every movie but only the title field (the _id will come along automatically).",
@@ -215,6 +266,22 @@ export const topics = [
     id: "sort-page",
     name: "4 · Sorting & Pagination",
     blurb: "Order results with sort(), page through them with limit() and skip().",
+    concept: {
+      summary: "Order results with sort(), then window them with skip() and limit(). Together these give you leaderboards and pagination.",
+      points: [
+        "sort({ field: 1 }) is ascending, -1 is descending.",
+        "Compound sorts apply keys left-to-right: { year: -1, title: 1 } (primary key, then tie-breaker).",
+        "limit(n) caps the number of results; skip(n) offsets past the first n.",
+        "Always sort BEFORE limit to get a real top-N, not an arbitrary slice.",
+        "Large skips are slow (the server still walks skipped docs); production apps often paginate with a range filter on an indexed field ('seek' pagination)."
+      ],
+      syntax: [
+        { code: "db.movies.find({}).sort({ rating: -1 }).limit(3)", note: "top 3" },
+        { code: "db.movies.find({}).sort({ title: 1 }).skip(5).limit(5)", note: "page 2 of 5" },
+        { code: "db.movies.find({}).sort({ year: -1, title: 1 })", note: "compound sort" }
+      ],
+      tip: "'The best X' = filter to X → sort by the metric → limit(1)."
+    },
     challenges: [
       { id: "sp1", title: "Best first", difficulty: 1, ordered: true,
         prompt: "Return all movies sorted by rating, highest first.",
@@ -283,6 +350,22 @@ export const topics = [
     id: "arrays",
     name: "5 · Array Queries",
     blurb: "Query inside arrays with $all, $size, $in, $elemMatch and more.",
+    concept: {
+      summary: "Arrays are first-class in MongoDB. You can match elements, exact lengths, and combinations without ever unpacking the array.",
+      points: [
+        "Scalar against an array field: { genres: \"Action\" } matches if ANY element is \"Action\".",
+        "$all requires ALL listed values to be present (order-independent, extras allowed).",
+        "$in matches if ANY element is in the list (a logical OR over membership).",
+        "$size matches an EXACT array length — it cannot be combined with a range.",
+        "$elemMatch requires a SINGLE element to satisfy all its conditions together."
+      ],
+      syntax: [
+        { code: "{ genres: { $all: [\"Action\", \"Sci-Fi\"] } }", note: "has all" },
+        { code: "{ genres: { $size: 2 } }", note: "exact length" },
+        { code: "{ favorites: { $elemMatch: { $gte: 10, $lte: 13 } } }", note: "one element in range" }
+      ],
+      tip: "When combining lower AND upper bounds on array elements, use $elemMatch — otherwise two different elements can each satisfy one bound and wrongly match."
+    },
     challenges: [
       { id: "ar1", title: "Contains a value", difficulty: 1,
         prompt: "Find movies whose genres include \"Action\".",
@@ -351,6 +434,23 @@ export const topics = [
     id: "agg-shape",
     name: "6 · Aggregation: Match & Shape",
     blurb: "The pipeline mindset: $match to filter, $project to reshape.",
+    concept: {
+      summary: "The aggregation pipeline is an array of stages; documents flow through them top to bottom, each stage transforming the stream. Start with $match (filter) and $project (reshape).",
+      points: [
+        "A pipeline is [ {stage}, {stage}, … ]; order matters.",
+        "$match uses the SAME operators as find — put it first so later stages process fewer docs.",
+        "$project reshapes: include/exclude, rename (name: \"$title\"), or compute new fields.",
+        "Inside expressions, reference a field's value with a $ prefix: \"$runtime\".",
+        "Expression operators ($add, $divide, $arrayElemAt, comparison ops…) build computed values.",
+        "$count collapses the whole stream into one { name: N } document."
+      ],
+      syntax: [
+        { code: "[ { $match: { genres: \"Sci-Fi\" } }, { $project: { _id: 0, title: 1 } } ]", note: "filter then shape" },
+        { code: "{ $project: { title: 1, hours: { $divide: [\"$runtime\", 60] } } }", note: "computed field" },
+        { code: "{ $project: { title: 1, isHit: { $gt: [\"$boxOffice\", 500] } } }", note: "boolean expression" }
+      ],
+      tip: "$gt has two forms: as a QUERY operator { field: { $gt: v } } it filters; as an EXPRESSION { $gt: [a, b] } it returns a boolean value."
+    },
     challenges: [
       { id: "as1", title: "First pipeline", difficulty: 1,
         prompt: "Using aggregation, return only the title of every Sci-Fi movie (no _id).",
@@ -419,6 +519,22 @@ export const topics = [
     id: "agg-group",
     name: "7 · Aggregation: Grouping",
     blurb: "$group and accumulators ($sum, $avg, $min, $max, $push).",
+    concept: {
+      summary: "$group buckets documents by a key and computes accumulated values per bucket — MongoDB's answer to SQL GROUP BY.",
+      points: [
+        "_id is the group key: \"$field\" groups by that field; _id: null groups everything into one bucket.",
+        "Accumulators: $sum, $avg, $min, $max, $push, $addToSet, $first, $last.",
+        "{ $sum: 1 } counts documents; { $sum: \"$field\" } totals a numeric field.",
+        "$push collects values into an array; $addToSet collects only DISTINCT values.",
+        "Group output order is NOT guaranteed — add a $sort stage for deterministic results."
+      ],
+      syntax: [
+        { code: "[ { $group: { _id: \"$type\", count: { $sum: 1 } } } ]", note: "count per key" },
+        { code: "[ { $group: { _id: \"$director\", total: { $sum: \"$boxOffice\" } } }, { $sort: { total: -1 } } ]", note: "sum + rank" },
+        { code: "[ { $group: { _id: null, avgRating: { $avg: \"$rating\" } } } ]", note: "overall stat" }
+      ],
+      tip: "A $match placed AFTER $group filters on aggregated values — this is the equivalent of SQL's HAVING clause."
+    },
     challenges: [
       { id: "gr1", title: "Count per type", difficulty: 2, ordered: true,
         prompt: "Count how many documents exist per type. Output { _id, count }, sorted by _id ascending.",
@@ -487,6 +603,21 @@ export const topics = [
     id: "agg-unwind",
     name: "8 · Aggregation: Unwinding Arrays",
     blurb: "$unwind flattens arrays so you can group and count their elements.",
+    concept: {
+      summary: "$unwind expands an array field into one document per element, so you can then group, count, and aggregate the contents.",
+      points: [
+        "$unwind: \"$genres\" outputs one copy of the doc per genre, each still carrying the other fields.",
+        "Empty or missing arrays are DROPPED by default (use { path, preserveNullAndEmptyArrays: true } to keep them).",
+        "The classic recipe is $unwind → $group to tally per element.",
+        "Because one document contributes to several elements, sums (e.g. revenue) can exceed the raw total.",
+        "A two-stage group (dedupe with the first, count with the second) counts distinct values."
+      ],
+      syntax: [
+        { code: "[ { $unwind: \"$genres\" }, { $group: { _id: \"$genres\", count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } } ]", note: "count per element" },
+        { code: "[ { $unwind: \"$genres\" }, { $count: \"genreTags\" } ]", note: "total elements" }
+      ],
+      tip: "Add an _id tie-breaker to $sort (e.g. { count: -1, _id: 1 }) so records with equal counts come back in a stable order."
+    },
     challenges: [
       { id: "un1", title: "Movies per genre", difficulty: 2, ordered: true,
         prompt: "Count how many movies fall under each genre. Unwind genres, group by genre, sort by count descending then _id ascending.",
@@ -555,6 +686,23 @@ export const topics = [
     id: "agg-lookup",
     name: "9 · Aggregation: Joins ($lookup)",
     blurb: "Relate collections with $lookup, then flatten with $unwind.",
+    concept: {
+      summary: "$lookup is a left outer join: it pulls matching documents from another collection into a new array field on each input document.",
+      points: [
+        "Four fields: from (target collection), localField, foreignField, as (output array name).",
+        "The result is ALWAYS an array — $unwind it to flatten a one-to-one join into flat fields.",
+        "localField can be an array: each element is matched — ideal for arrays of references.",
+        "Unmatched parents get an EMPTY array — filter { as: { $size: 0 } } to find orphans.",
+        "Reduce first (match / group / limit), THEN join the survivors — joins are expensive.",
+        "$size of the joined array gives a related-count without a separate $group."
+      ],
+      syntax: [
+        { code: "{ $lookup: { from: \"movies\", localField: \"movie_id\", foreignField: \"_id\", as: \"movie\" } }", note: "the join" },
+        { code: "{ $unwind: \"$movie\" }", note: "flatten to one doc" },
+        { code: "{ $project: { title: \"$movie.title\", stars: 1, _id: 0 } }", note: "pull joined fields" }
+      ],
+      tip: "After $unwind you can $match on joined fields (e.g. \"user.membership\": \"premium\") to filter parents by a property of the joined child."
+    },
     challenges: [
       { id: "lk1", title: "Enrich one review", difficulty: 2,
         prompt: "For review _id 1001, join its movie and return { stars, title } where title is the movie's title. (Hint: $lookup gives an array — $unwind it, then project title: \"$movie.title\".)",
@@ -623,6 +771,23 @@ export const topics = [
     id: "agg-advanced",
     name: "10 · Advanced Aggregation",
     blurb: "$addFields, $bucket, $facet, $switch, $replaceRoot and multi-stage pipelines.",
+    concept: {
+      summary: "Compose expressions and specialized stages to build reports, categorize data, and reshape documents into exactly the form you need.",
+      points: [
+        "$addFields (alias $set) adds or updates fields while KEEPING the rest — unlike $project.",
+        "$bucket groups a numeric field into ranges [inclusive, exclusive) with a catch-all default.",
+        "$facet runs several sub-pipelines over the SAME input for multi-part reports/dashboards.",
+        "$switch is if / else-if / else; $cond is a compact ternary.",
+        "$replaceRoot promotes an embedded document to the top level.",
+        "Array expressions: $size, $slice, $arrayElemAt, $map, $filter, $reduce."
+      ],
+      syntax: [
+        { code: "{ $addFields: { totalAwards: { $add: [\"$awards.wins\", \"$awards.nominations\"] } } }", note: "augment" },
+        { code: "{ $bucket: { groupBy: \"$rating\", boundaries: [8, 8.5, 9, 9.6], default: \"other\", output: { count: { $sum: 1 } } } }", note: "histogram" },
+        { code: "{ $switch: { branches: [ { case: { $gte: [\"$rating\", 9] }, then: \"Masterpiece\" } ], default: \"Good\" } }", note: "if/else" }
+      ],
+      tip: "Derive a grouping key with arithmetic ($subtract, $mod) then $group on it to build custom buckets — e.g. group movies by decade."
+    },
     challenges: [
       { id: "ad1", title: "Add then rank", difficulty: 3, ordered: true,
         prompt: "Add a field totalAwards = awards.wins + awards.nominations, then return { title, totalAwards } for the top 5, sorted by totalAwards descending.",
